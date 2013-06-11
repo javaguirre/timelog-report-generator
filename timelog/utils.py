@@ -10,6 +10,17 @@ import codecs
 '''
 
 
+def as_minutes(duration):
+    """Convert a datetime.timedelta to an integer number of minutes."""
+    return duration.days * 24 * 60 + duration.seconds // 60
+
+
+def format_duration(duration):
+    """Format a datetime.timedelta with minute precision."""
+    h, m = divmod(as_minutes(duration), 60)
+    return '%d h %d min' % (h, m)
+
+
 def parse_date(dt):
     m = re.match(r'^(\d+)/(\d+)/(\d+)$', dt)
     if not m:
@@ -27,10 +38,19 @@ def parse_datetime(dt):
     return datetime.datetime(year, month, day, hour, min)
 
 
+def set_duration(current, last):
+    if last and current.day == last.day:
+        return current - last
+    else:
+        return datetime.timedelta(0)
+
+
 def calculate_report(filepath, start_date, end_date, order_by, client=None):
     entries = []
     start = parse_date(start_date)
     end = parse_date(end_date)
+    last_datetime = None
+
     with codecs.open(os.path.expanduser(filepath), encoding='utf-8') as filed:
         for line in filed:
             try:
@@ -43,7 +63,9 @@ def calculate_report(filepath, start_date, end_date, order_by, client=None):
             if dt is not None and dt > start and dt < end:
                 if not entry.endswith('**'):
                     if not client or client == entry:
-                        entries.append([dt, entry])
+                        duration = set_duration(dt, last_datetime)
+                        entries.append([dt, entry, duration])
+                last_datetime = dt
     return entries
 
 
@@ -79,7 +101,7 @@ def get_price(entry, duration, clients_file, with_price=False):
 def print_result(data_report, filepath=None):
     # TODO If filepath
     for item in data_report:
-        print(item)
+        print('%s %s %s' % (item[0], item[1], format_duration(item[2])))
 
 
 def run_timelog(args):
