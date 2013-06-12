@@ -28,6 +28,11 @@ def main():
                         )
     parser.add_argument('--price',
                         help='With price or not, boolean',
+                        action='store_true',
+                        default=False)
+    parser.add_argument('--tasks',
+                        help='With tasks or not, boolean',
+                        action='store_true',
                         default=False)
     parser.add_argument('--generate-timelog',
                         help='With a format */*/2013',

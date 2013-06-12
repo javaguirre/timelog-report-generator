@@ -50,23 +50,26 @@ def calculate_report(filepath, start_date, end_date, order_by, client=None):
     start = parse_date(start_date)
     end = parse_date(end_date)
     last_datetime = None
+    tasks = []
 
     with codecs.open(os.path.expanduser(filepath), encoding='utf-8') as filed:
         for line in filed:
-            # TODO Tasks
             try:
                 time, entry = line.split(': ', 1)
                 entry = entry.replace('\n', '')
                 dt = parse_datetime(time)
             except ValueError:
                 dt = None
+                if re.match('^\* \[[\.oOX]\]', line):
+                    tasks.append(line)
                 continue
             if dt is not None and dt > start and dt < end:
                 if not entry.endswith('**'):
                     if not client or client == entry:
                         duration = set_duration(dt, last_datetime)
-                        entries.append([dt, entry, duration])
+                        entries.append([dt, entry, duration, tasks])
                 last_datetime = dt
+                tasks = []
     return entries
 
 
@@ -78,7 +81,7 @@ def report_group_by(entries, order_by):
         return False
 
     if order_by in ('week', 'month', 'day'):
-        for date_work, client, duration in entries:
+        for date_work, client, duration, tasks in entries:
             if order_by == 'week':
                 date_value = date_work.isocalendar()[1]
             else:
@@ -87,10 +90,11 @@ def report_group_by(entries, order_by):
             if last_value == date_value:
                 if client in new_entries[date_value]:
                     new_entries[date_value][client][2] += duration
+                    new_entries[date_value][client][3] += tasks
                 else:
-                    new_entries[date_value][client] = [date_work, client, duration]
+                    new_entries[date_value][client] = [date_work, client, duration, tasks]
             else:
-                new_entries[date_value] = {client: [date_work, client, duration]}
+                new_entries[date_value] = {client: [date_work, client, duration, tasks]}
 
             last_value = date_value
     else:
@@ -104,14 +108,16 @@ def print_header(order_value, order_by):
     return '====== %s %s =======\n' % (order_by.capitalize(), str(order_value))
 
 
-def print_content(data):
+def print_content(data, with_tasks):
     for client, client_info in data.items():
         print('%s : %s' % (client.capitalize(),
                            format_duration(client_info[2])))
+        if client_info[3] and with_tasks:
+            print('\n%s' % ''.join(client_info[3]))
 
 
-def print_result(data_report, order_by=None, filepath=None):
-    # TODO If filepath
+def print_result(data_report, with_tasks, order_by=None, filepath=None):
+    # TODO If filepath, save to the file instead of stdout
     if not order_by:
         # TODO Think what to do with the default
         for item in data_report:
@@ -119,7 +125,7 @@ def print_result(data_report, order_by=None, filepath=None):
     else:
         for order_value, data in data_report.items():
             print(print_header(order_value, order_by))
-            print_content(data)
+            print_content(data, with_tasks)
 
 
 def run_timelog(args):
@@ -129,7 +135,11 @@ def run_timelog(args):
     entries = calculate_report(filepath,
                                args.start_date, args.end_date,
                                args.order_by, args.client)
+    if not entries:
+        print('No entries')
+        return False
+
     if args.order_by and args.order_by in ('day', 'week', 'month'):
         entries = report_group_by(entries, args.order_by)
 
-    print_result(entries, args.order_by, filepath_dst)
+    print_result(entries, args.tasks, args.order_by, filepath_dst)
