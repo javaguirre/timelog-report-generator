@@ -100,16 +100,26 @@ def report_group_by(entries, order_by):
     return new_entries
 
 
+def print_header(order_value, order_by):
+    return '====== %s %s =======\n' % (order_by.capitalize(), str(order_value))
+
+
+def print_content(data):
+    for client, client_info in data.items():
+        print('%s : %s' % (client.capitalize(),
+                           format_duration(client_info[2])))
+
+
 def print_result(data_report, order_by=None, filepath=None):
     # TODO If filepath
     if not order_by:
+        # TODO Think what to do with the default
         for item in data_report:
             print('%s %s %s' % (item[0], item[1], format_duration(item[2])))
     else:
         for order_value, data in data_report.items():
-            print order_value
-            for client, client_info in data.items():
-                print(client, format_duration(client_info[2]))
+            print(print_header(order_value, order_by))
+            print_content(data)
 
 
 def run_timelog(args):
