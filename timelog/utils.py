@@ -9,6 +9,7 @@ import codecs
     Timelog generator report tools
 '''
 
+DURATION_FORMAT ='%d h %d min'
 
 def as_minutes(duration):
     """Convert a datetime.timedelta to an integer number of minutes."""
@@ -18,7 +19,7 @@ def as_minutes(duration):
 def format_duration(duration):
     """Format a datetime.timedelta with minute precision."""
     h, m = divmod(as_minutes(duration), 60)
-    return '%d h %d min' % (h, m)
+    return DURATION_FORMAT % (h, m)
 
 
 def parse_date(dt):
@@ -104,6 +105,17 @@ def report_group_by(entries, order_by):
     return new_entries
 
 
+def get_price(client, total_time, client_file):
+    with open(client_file, 'r') as f:
+        for line in f:
+            if line.startswith(client):
+                client_info = line.split(':')
+                if client_info[0] == client:
+                    hours = '%.2f' % round((total_time.total_seconds()*1.0)/3600, 2)
+                    return int(client_info[2])*float(hours)
+    return 0
+
+
 def print_header(order_value, order_by):
     return '====== %s %s =======\n' % (order_by.capitalize(), str(order_value))
 
@@ -116,7 +128,8 @@ def print_content(data, with_tasks):
             print('\n%s' % ''.join(client_info[3]))
 
 
-def print_result(data_report, with_tasks, order_by=None, filepath=None):
+def print_result(data_report, with_tasks, order_by=None, client=None,
+                 filepath=None, client_file=None, with_price=False):
     # TODO If filepath, save to the file instead of stdout
     if not order_by:
         # TODO Think what to do with the default
@@ -126,13 +139,17 @@ def print_result(data_report, with_tasks, order_by=None, filepath=None):
         for order_value, data in data_report.items():
             print(print_header(order_value, order_by))
             print_content(data, with_tasks)
+            total_time = reduce(lambda x, y: x + y,
+                                [value[2] for value in data.values()])
+            print('\nTotal time: %s' % total_time)
+
+            if with_price:
+                total_price = get_price(client, total_time, client_file)
+                print('\nTotal amount: %s' % total_price)
 
 
 def run_timelog(args):
-    filepath = args.timelog_src
-    filepath_dst = None
-
-    entries = calculate_report(filepath,
+    entries = calculate_report(args.timelog_src,
                                args.start_date, args.end_date,
                                args.order_by, args.client)
     if not entries:
@@ -142,4 +159,7 @@ def run_timelog(args):
     if args.order_by and args.order_by in ('day', 'week', 'month'):
         entries = report_group_by(entries, args.order_by)
 
-    print_result(entries, args.tasks, args.order_by, filepath_dst)
+    print_result(entries, args.tasks, args.order_by, args.client,
+                 os.path.expanduser(args.timelog_src),
+                 os.path.expanduser(args.clients_file),
+                 args.price)
