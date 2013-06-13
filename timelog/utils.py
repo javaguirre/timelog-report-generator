@@ -114,8 +114,9 @@ def get_price(client, total_time, client_file):
             if line.startswith(client):
                 client_info = line.split(':')
                 if client_info[0] == client:
-                    hours = '%.2f' % round((total_time.total_seconds()*1.0)/3600, 2)
-                    return int(client_info[2])*float(hours)
+                    hours = (total_time.total_seconds()*1.0)/3600
+                    return '%.2f' % round(float(client_info[2])*float(hours),
+                                          2)
     return 0
 
 
@@ -139,7 +140,7 @@ def print_result(data_report, with_tasks, order_by=None, client=None,
         print_content(data, with_tasks)
         total_time = reduce(lambda x, y: x + y,
                             [value[2] for value in data.values()])
-        print('\nTotal time: %s' % total_time)
+        print('\nTotal time: %s' % format_duration(total_time))
 
         if with_price:
             total_price = get_price(client, total_time, client_file)
