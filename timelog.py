@@ -24,7 +24,7 @@ def main():
                         )
     parser.add_argument('--order-by',
                         help='Order by month week day',
-                        default=('week', 'day', 'month')
+                        default=False
                         )
     parser.add_argument('--price',
                         help='With price or not, boolean',
