@@ -1,0 +1,3 @@
+project1:hour:40
+project2:hour:45
+project3:hour:50

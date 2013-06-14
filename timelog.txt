@@ -1,0 +1,30 @@
+Diary 24 April 2013
+
+2013-04-24 10:00: start**
+2013-04-24 12:00: project1
+2013-04-24 16:00: break**
+2013-04-24 18:30: project1
+Diary 25 Abril
+
+2013-04-25 15:30: start**
+2013-04-25 18:00: project1
+Diary 26 Abril 2013
+
+2013-04-26 9:30: start**
+
+* [X] Task completed
+
+2013-04-26 10:00: project1
+2013-04-26 13:30: break**
+2013-04-26 15:30: project1
+Diary 29-04-2013
+
+2013-04-29 14:11: start**
+
+* [.] Task started
+
+2013-04-29 16:00: project2
+2013-04-29 16:33: break**
+2013-04-29 18:20: project2
+2013-04-29 18:50: project3
+= 2013-05-01 =

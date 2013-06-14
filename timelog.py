@@ -4,8 +4,8 @@ import argparse
 
 from timelog.utils import run_timelog
 
-TIMELOG_FILE = '~/vimwiki/timelog.txt'
-CLIENTS_FILE = '~/vimwiki/Projects.wiki'
+TIMELOG_FILE = 'timelog.txt'
+CLIENTS_FILE = 'projects.txt'
 
 
 def main():
