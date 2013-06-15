@@ -32,10 +32,46 @@
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
         <h1>
-<a name="timelog-report-generator" class="anchor" href="#timelog-report-generator"><span class="octicon octicon-link"></span></a>Timelog Report Generator</h1>
+            <a name="timelog-report-generator" class="anchor" href="#timelog-report-generator"><span class="octicon octicon-link"></span></a>Timelog Report Generator
+        </h1>
 
-<p>This is a report generator for text based timelogs, We made it for gtimelog but it could be configured
-to check for other patterns in the text files to fit your needs.</p>
+        <p>
+        This is a report generator for text based timelogs, We made it for gtimelog but it could be configured
+        to check for other patterns in the text files to fit your needs.</p>
+        <p>
+            We should be able to generate weekly, monthly or daily reports
+            using your timelog.txt file and generate it from vimwiki, which is the one I am using
+            for the timetrack.
+        </p>
+        <p>
+            Example:
+        </p>
+        <code>
+            python2 timelog.py --start-date 1/1/2013 --end-date 30/6/2013 --order-by week --tasks
+        </code>
+        <p>
+            Output:
+        </p>
+        <code>
+   ====== Week 17 =======
+
+    Project1 : 9 h 30 min
+
+    * [X] Task completed
+
+
+    Total time: 9 h 30 min
+    ====== Week 18 =======
+
+    Project3 : 0 h 30 min
+    Project2 : 3 h 36 min
+
+    * [.] Task started
+
+
+    Total time: 4 h 6 min
+
+        </code>
       </section>
     </div>
 
@@ -46,8 +82,5 @@ to check for other patterns in the text files to fit your needs.</p>
         <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
       </footer>
     </div>
-
-    
-
   </body>
 </html>
