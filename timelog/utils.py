@@ -142,7 +142,7 @@ def print_result(data_report, with_tasks, order_by=None, client=None,
                             [value[2] for value in data.values()])
         print('\nTotal time: %s' % format_duration(total_time))
 
-        if with_price:
+        if with_price and client:
             total_price = get_price(client, total_time, client_file)
             print('\nTotal amount: %s' % total_price)
 
