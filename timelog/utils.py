@@ -2,6 +2,7 @@
 
 import os
 import re
+import functools
 import datetime
 import codecs
 
@@ -142,7 +143,7 @@ class TimelogReport():
         for order_value, data in data_report.items():
             result.append(self.get_header(order_value))
             result = result + self.get_content(data)
-            total_time = reduce(lambda x, y: x + y,
+            total_time = functools.reduce(lambda x, y: x + y,
                                 [value[2] for value in data.values()])
             result.append('\nTotal time: %s' % self.format_duration(total_time))
 
