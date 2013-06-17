@@ -2,7 +2,7 @@
 
 import argparse
 
-from timelog.utils import run_timelog
+from timelog.utils import TimelogReport
 
 TIMELOG_FILE = 'timelog.txt'
 CLIENTS_FILE = 'projects.txt'
@@ -42,7 +42,12 @@ def main():
                         default=None)
 
     arguments = parser.parse_args()
-    run_timelog(arguments)
+    timelog_report = TimelogReport(arguments)
+    result = timelog_report.run()
+
+    # TODO Or write it to a file
+    print(result)
+
 
 if __name__ == '__main__':
     main()
