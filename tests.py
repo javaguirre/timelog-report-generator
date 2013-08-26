@@ -18,7 +18,8 @@ class TestTimelogFunctions(unittest.TestCase):
                      'order_by': None,
                      'client': None,
                      'tasks': False,
-                     'price': False}
+                     'price': False,
+                     'generate_html': False}
 
     def test_dates_empty(self):
         arguments = ArgParseMock(**self.args)
