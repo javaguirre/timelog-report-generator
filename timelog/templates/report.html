@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Report</title>
+        <!-- TODO bootstrap styles -->
+        <script src="/static/vendor/jquery/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="/static/vendor/d3/d3.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="/static/vendor/nvd3/nv.d3.js" type="text/javascript" charset="utf-8"></script>
+        <link href="/static/vendor/nvd3/src/nv.d3.css" rel="stylesheet" type="text/css">
+
+        <style>
+
+        body {
+          overflow-y:scroll;
+          margin: 0;
+          padding: 0;
+        }
+
+        svg {
+          overflow: hidden;
+        }
+
+        div {
+          border: 0;
+          margin: 0;
+        }
+
+        /*
+#offsetDiv {
+          margin-left: 100px;
+          margin-top: 100px;
+        }
+        */
+
+
+#test1 {
+          margin: 0;
+        }
+
+#test1 svg {
+          height: 500px;
+        }
+
+        </style>
+    </head>
+    <body>
+        <h1>{{ client }}</h1>
+
+        <div id="offsetDiv">
+          <div id="test1" class="chartWrap">
+            <svg></svg>
+          </div>
+        </div>
+
+        <script src="/static/vendor/nvd3/lib/d3.v3.js"></script>
+        <!--<script src="/static/vendor/nvd3/lib/fisheye.js"></script>-->
+        <script src="/static/vendor/nvd3/nv.d3.js"></script>
+        <script src="/static/vendor/nvd3/src/tooltip.js"></script>
+        <script src="/static/vendor/nvd3/src/utils.js"></script>
+        <script src="/static/vendor/nvd3/src/models/legend.js"></script>
+        <script src="/static/vendor/nvd3/src/models/axis.js"></script>
+        <script src="/static/vendor/nvd3/src/models/distribution.js"></script>
+        <script src="/static/vendor/nvd3/src/models/scatter.js"></script>
+        <script src="/static/vendor/nvd3/src/models/scatterChart.js"></script>
+
+        <script>
+            //Format A
+            var chart;
+            nv.addGraph(function() {
+              chart = nv.models.scatterChart()
+                            .showDistX(true)
+                            .showDistY(true)
+                            //.height(500)
+                            .useVoronoi(true)
+                            .color(d3.scale.category10().range());
+
+              chart.xAxis.tickFormat(d3.format('.02f'))
+              chart.yAxis.tickFormat(d3.format('2d'))
+
+              d3.select('#test1 svg')
+                  .datum(randomData(1,40))
+                .transition().duration(500)
+                  .call(chart);
+              nv.utils.windowResize(chart.update);
+
+              chart.dispatch.on('stateChange', function(e) { ('New State:', JSON.stringify(e)); });
+              chart.dispatch.on('tooltipShow', function(e) {
+                  $('.entry').hide();
+                  $('#' + e.point.id).show();
+              });
+
+              return chart;
+            });
+
+
+            function randomData(groups, points) { //# groups,# points per group
+              var data = [],
+                  //shapes = ['circle', 'cross', 'triangle-up', 'triangle-down', 'diamond', 'square'],
+                  random = d3.random.normal();
+
+              for (i = 0; i < groups; i++) {
+                data.push({
+                  key: '{{ client }}',
+                  values: []
+                });
+
+                data[0].values = {{ entries_json }};
+              }
+
+              return data;
+            }
+        </script>
+
+        <div class="container">
+
+            {% for key, entry in entries.items() %}
+                <div id="id-{{ key }}" class="entry">
+                    <h2>Tasks Day {{ key }}</h2>
+                    <ul>
+                        {% for entry_data in entry[client][3] %}
+                            <li>{{ entry_data }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+    </body>
+</html>

@@ -5,6 +5,9 @@ import re
 import functools
 import datetime
 import codecs
+import json
+
+from jinja2 import Environment, FileSystemLoader
 
 '''
     Timelog generator report tools
@@ -18,20 +21,22 @@ TIMELOG_SEPARATION_FORMAT = r': '   # This is the separation between the
                                     # datetime and the tag/client
 SLACK_FORMAT = r'\w+\*\*$'          # the format of the log entries that aren't
                                     # counted as work
+SITE = os.path.join(os.path.dirname(__file__), '_site')
 
 
 class TimelogReport():
     def __init__(self, args):
-        self.timelog_src = args.timelog_src
+        self.timelog_src = os.path.expanduser(args.timelog_src)
         self.start_date = args.start_date
         self.end_date = args.end_date
         self.client = args.client
         self.order_by = args.order_by or 'day'
         self.tasks = args.tasks
         self.client = args.client
-        self.client_file = args.clients_file
+        self.client_file = os.path.expanduser(args.clients_file)
         self.price = args.price
         self.tasks = args.tasks
+        self.generate_html = args.generate_html
 
     def as_minutes(self, duration):
         """Convert a datetime.timedelta to an integer number of minutes."""
@@ -62,12 +67,12 @@ class TimelogReport():
         else:
             return datetime.timedelta(0)
 
-    def calculate_report(self):
+    def calculate_report(self, no_progress=False):
         entries = []
         start = self.parse_date(self.start_date)
         end = self.parse_date(self.end_date)
         last_datetime = None
-        tasks = []
+        tasks = set()
 
         with codecs.open(os.path.expanduser(self.timelog_src), encoding='utf-8') as filed:
             for line in filed:
@@ -78,7 +83,11 @@ class TimelogReport():
                 except ValueError:
                     dt = None
                     if re.match(TASKS_FORMAT, line):
-                        tasks.append(line)
+                        task_line = line.replace('\n', '')
+                        if not no_progress:
+                            tasks.add(task_line)
+                        else:
+                            tasks.add(re.sub(TASKS_FORMAT, '', task_line))
                     continue
                 if dt is not None and dt > start and dt < end:
                     if not re.match(SLACK_FORMAT, entry):
@@ -86,7 +95,7 @@ class TimelogReport():
                             duration = self.set_duration(dt, last_datetime)
                             entries.append([dt, entry, duration, tasks])
                     last_datetime = dt
-                    tasks = []
+                    tasks = set()
         return entries
 
     def report_group_by(self, entries):
@@ -105,7 +114,7 @@ class TimelogReport():
             if last_value == date_value:
                 if client in new_entries[date_value]:
                     new_entries[date_value][client][2] += duration
-                    new_entries[date_value][client][3] += tasks
+                    new_entries[date_value][client][3] = new_entries[date_value][client][3] | tasks
                 else:
                     new_entries[date_value][client] = [date_work, client,
                                                        duration, tasks]
@@ -128,6 +137,36 @@ class TimelogReport():
 
     def get_header(self, order_value):
         return '\n====== %s %s =======\n' % (self.order_by.capitalize(), str(order_value))
+
+    def generate_json_output(self, entries):
+        entries_json = []
+
+        for key, entry in entries.items():
+            aux_entry = {'x': key,
+                         'y': entry[self.client][2].seconds/(3600),
+                         'size': len(entry[self.client][3]),
+                         'shape': 'circle',
+                         'id': '-'.join(['id', str(key)])
+                         }
+            entries_json.append(aux_entry)
+
+        return json.dumps(entries_json)
+
+
+
+    def generate_html_output(self, entries):
+        loader = FileSystemLoader(os.path.join(os.path.dirname(__file__),
+                                               'templates'))
+        path = os.path.join(SITE, '%s.html' % self.client)
+        env = Environment(loader=loader)
+        template = env.get_template('report.html')
+        entries_json = self.generate_json_output(entries)
+        template_content = template.render(entries=entries,
+                                           entries_json=entries_json,
+                                           client=self.client)
+        new_file = open(path, 'w')
+        new_file.write(template_content)
+        new_file.close()
 
     def get_content(self, data):
         content = []
@@ -153,7 +192,7 @@ class TimelogReport():
         return result
 
     def run(self):
-        entries = self.calculate_report()
+        entries = self.calculate_report(self.generate_html)
         if not entries:
             return 'Error: No entries'
 
@@ -161,6 +200,8 @@ class TimelogReport():
             entries = self.report_group_by(entries)
         else:
             return 'Error: You need to provide a good order, the options are day, week, month'
+        if self.generate_html and self.client:
+            self.generate_html_output(entries)
 
         result = self.get_result(entries)
         return '\n'.join(result)

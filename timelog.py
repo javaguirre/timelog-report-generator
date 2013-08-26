@@ -40,6 +40,10 @@ def main():
     parser.add_argument('--client',
                         help='The client in case you want a client report',
                         default=None)
+    parser.add_argument('--generate-html',
+                        help='Generate HTML page with the stats',
+                        action='store_true',
+                        default=False)
 
     arguments = parser.parse_args()
     timelog_report = TimelogReport(arguments)

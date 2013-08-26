@@ -8,9 +8,13 @@ We should be able to generate weekly, monthly or daily reports
 using your timelog.txt file and generate it from vimwiki, which is the one I am using
 for the timetrack.
 
+To use the generate html output you need Jinja2
+
+    pip install -r requirements.txt
+
 Example:
 
-    python2 timelog.py --start-date 1/1/2013 --end-date 30/6/2013 --order-by week --tasks
+    python timelog.py --start-date 1/1/2013 --end-date 30/6/2013 --order-by week --tasks
 
 Output:
 
@@ -38,3 +42,4 @@ TODO
 
 - [ ] Make easier configuration, move it to a config file
 - [ ] Create a Python package
+- [ ] Make Jinja optional
