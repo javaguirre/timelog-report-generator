@@ -8,6 +8,8 @@
         <script src="/static/vendor/d3/d3.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="/static/vendor/nvd3/nv.d3.js" type="text/javascript" charset="utf-8"></script>
         <link href="/static/vendor/nvd3/src/nv.d3.css" rel="stylesheet" type="text/css">
+        <link href="/static/vendor/flat-ui-official/bootstrap/css/bootstrap.css" rel="stylesheet" type="text/css">
+        <link href="/static/vendor/flat-ui-official/css/flat-ui.css" rel="stylesheet" type="text/css">
 
         <style>
 
@@ -70,55 +72,25 @@
 
         <script>
             //Format A
-            var chart;
-            nv.addGraph(function() {
-              chart = nv.models.scatterChart()
-                            .showDistX(true)
-                            .showDistY(true)
-                            //.height(500)
-                            .useVoronoi(true)
-                            .color(d3.scale.category10().range());
-
-              chart.xAxis.tickFormat(d3.format('2d'))
-              chart.yAxis.tickFormat(d3.format('.02f'))
-
-              var svg = d3.select('#test1 svg');
-              svg
-                  .datum(getData())
-                .transition().duration(500)
-                  .call(chart);
-              nv.utils.windowResize(chart.update);
-
-              svg.append('text')
-                  .attr('class', 'x label')
-                  .attr('text-anchor', 'end')
-                  .attr('x', 500)
-                  .attr('y', 500)
-                  .text('Days of the month');
-
-              svg.append('text')
-                  .attr('class', 'y label')
-                  .attr('text-anchor', 'end')
-                  .attr('x', -100)
-                  .attr('y', 6)
-                  .attr('dy', '.75em')
-                  .attr('transform', 'rotate(-90)')
-                  .text('Hours worked');
-
-              //chart.dispatch.on('stateChange', function(e) { ('New State:', JSON.stringify(e)); });
-              chart.dispatch.on('tooltipShow', function(e) {
-                  $('.entry').hide();
-                  $('#' + e.point.id).show();
-              });
-
-              return chart;
-            });
-
-
             function getData() { //# groups,# points per group
                 var data = {{ entries_json }};
                 return data;
             }
+
+            nv.addGraph(function() {
+                var chart = nv.models.discreteBarChart()
+                    .x(function(d) { return d.x; })
+                    .y(function(d) { return d.y; })
+                    .staggerLabels(true)
+                    .tooltips(false)
+                    .showValues(true)
+                d3.select('#test1 svg')
+                    .datum(getData())
+                    .transition().duration(500)
+                    .call(chart);
+
+                nv.utils.windowResize(chart.update);
+            });
         </script>
 
         <div class="container">
@@ -126,7 +98,7 @@
             {% if client %}
                 {% for key, entry in entries.items() %}
                     <div id="id-{{ key }}" class="entry">
-                        <h2>Tasks Day {{ key }}</h2>
+                        <h4>Tasks Day {{ key }} <a href="#tasks" id="#task-list"></a></h4>
                         <ul>
                             {% for entry_data in entry[client][3] %}
                                 <li>{{ entry_data }}</li>
