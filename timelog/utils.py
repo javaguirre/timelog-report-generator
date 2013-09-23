@@ -13,6 +13,7 @@ from jinja2 import Environment, FileSystemLoader
     Timelog generator report tools
 '''
 
+HTML_TEMPLATE = 'bar_report.html'
 DURATION_FORMAT = r'%d h %d min'
 DATE_FORMAT = r'^(\d+)/(\d+)/(\d+)$'
 DATETIME_FORMAT = r'^(\d+)-(\d+)-(\d+) (\d+):(\d+)$'
@@ -21,7 +22,7 @@ TIMELOG_SEPARATION_FORMAT = r': '   # This is the separation between the
                                     # datetime and the tag/client
 SLACK_FORMAT = r'\w+\*\*$'          # the format of the log entries that aren't
                                     # counted as work
-SITE = os.path.join(os.path.dirname(__file__), '_site')
+SITE = os.path.join(os.path.dirname(__file__), 'reports')
 
 
 class TimelogReport():
@@ -74,7 +75,8 @@ class TimelogReport():
         last_datetime = None
         tasks = set()
 
-        with codecs.open(os.path.expanduser(self.timelog_src), encoding='utf-8') as filed:
+        with codecs.open(os.path.expanduser(self.timelog_src),
+                         encoding='utf-8') as filed:
             for line in filed:
                 try:
                     time, entry = line.split(TIMELOG_SEPARATION_FORMAT, 1)
@@ -89,7 +91,7 @@ class TimelogReport():
                         else:
                             tasks.add(re.sub(TASKS_FORMAT, '', task_line))
                     continue
-                if dt is not None and dt > start and dt < end:
+                if dt is not None and dt >= start and dt <= end:
                     if not re.match(SLACK_FORMAT, entry):
                         if not self.client or self.client == entry:
                             duration = self.set_duration(dt, last_datetime)
@@ -124,46 +126,95 @@ class TimelogReport():
             last_value = date_value
         return new_entries
 
+    def get_hours(self, total_time):
+        return '%.2f' % ((total_time.total_seconds()*1.0)/3600)
+
     def get_price(self, total_time):
         with open(self.client_file, 'r') as f:
             for line in f:
                 if line.startswith(self.client):
                     client_info = line.split(':')
                     if client_info[0] == self.client:
-                        hours = (total_time.total_seconds()*1.0)/3600
+                        hours = self.get_hours(total_time)
                         return '%.2f' % round(float(client_info[2])*float(hours),
                                               2)
         return 0
 
+    def get_total_time(self, entries):
+        total_times = {}
+
+        for entry in entries:
+            if entry[1] in total_times:
+                total_times[entry[1]] += entry[2]
+            else:
+                total_times[entry[1]] = entry[2]
+
+        return total_times
+
     def get_header(self, order_value):
-        return '\n====== %s %s =======\n' % (self.order_by.capitalize(), str(order_value))
+        return '\n====== %s %s =======\n' % (self.order_by.capitalize(),
+                                             str(order_value))
 
     def generate_json_output(self, entries):
+        result_output = []
         entries_json = []
+        entries_multiple_clients = {}
 
         for key, entry in entries.items():
-            aux_entry = {'x': key,
-                         'y': entry[self.client][2].seconds/(3600),
-                         'size': len(entry[self.client][3]),
-                         'shape': 'circle',
-                         'id': '-'.join(['id', str(key)])
-                         }
-            entries_json.append(aux_entry)
+            if self.client:
+                aux_entry = {'x': key,
+                             'y': entry[self.client][2].seconds/(3600),
+                             'size': len(entry[self.client][3]),
+                             'id': '-'.join(['id', str(key)])
+                             }
+                entries_json.append(aux_entry)
+            else:
+                for client, item in entry.items():
+                    if client not in entries_multiple_clients:
+                        entries_multiple_clients[client] = []
 
-        return json.dumps(entries_json)
+                    aux_entry = {'x': key,
+                                 'y': item[2].seconds/(3600),
+                                 'size': len(item[3]),
+                                 'id': '-'.join(['id', str(key)])
+                                 }
+                    entries_multiple_clients[client].append(aux_entry)
 
+        if self.client:
+            result_output.append({'key': self.client, 'values': entries_json})
+        else:
+            result_output = [{'key': client_key, 'values': items}
+                             for client_key, items in entries_multiple_clients.items()]
+        return json.dumps(result_output)
 
-
-    def generate_html_output(self, entries):
+    def generate_html_output(self, entries, total):
         loader = FileSystemLoader(os.path.join(os.path.dirname(__file__),
                                                'templates'))
-        path = os.path.join(SITE, '%s.html' % self.client)
-        env = Environment(loader=loader)
-        template = env.get_template('report.html')
+        # FIXME This will crash If we don't put a start_date in the command line
+        if self.client:
+            path = os.path.join(SITE, self.client, '%s.html' % self.parse_date(self.start_date).month)
+        else:
+            path = os.path.join(SITE, 'admin', '%s.html' % self.parse_date(self.start_date).month)
+
         entries_json = self.generate_json_output(entries)
+
+        # FIXME This should be outside
+        try:
+            os.mkdir(os.path.join(SITE, self.client or 'admin'))
+        except FileExistsError:
+            pass
+
+        if self.client:
+            total_time = self.get_hours(total[self.client])
+        else:
+            total_time = 0
+
+        env = Environment(loader=loader)
+        template = env.get_template(HTML_TEMPLATE)
         template_content = template.render(entries=entries,
                                            entries_json=entries_json,
-                                           client=self.client)
+                                           client=self.client,
+                                           total=total_time)
         new_file = open(path, 'w')
         new_file.write(template_content)
         new_file.close()
@@ -182,8 +233,10 @@ class TimelogReport():
         for order_value, data in data_report.items():
             result.append(self.get_header(order_value))
             result = result + self.get_content(data)
-            total_time = functools.reduce(lambda x, y: x + y,
-                                [value[2] for value in data.values()])
+            total_time = functools.reduce(
+                    lambda x, y: x + y,
+                    [value[2] for value in data.values()]
+            )
             result.append('\nTotal time: %s' % self.format_duration(total_time))
 
             if self.price and self.client:
@@ -193,15 +246,21 @@ class TimelogReport():
 
     def run(self):
         entries = self.calculate_report(self.generate_html)
+
         if not entries:
             return 'Error: No entries'
+
+        # FIXME
+        total_time = self.get_total_time(entries)
 
         if self.order_by in ('day', 'week', 'month'):
             entries = self.report_group_by(entries)
         else:
             return 'Error: You need to provide a good order, the options are day, week, month'
-        if self.generate_html and self.client:
-            self.generate_html_output(entries)
+
+        if self.generate_html and self.start_date:
+            self.generate_html_output(entries, total_time)
 
         result = self.get_result(entries)
+
         return '\n'.join(result)
