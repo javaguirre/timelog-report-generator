@@ -184,6 +184,12 @@ class TimelogReport():
 
         return content
 
+    def get_total_sum(self, data):
+        return functools.reduce(
+                lambda x, y: x + y,
+                [value[DURATION] for value in data.values()]
+        )
+
     def get_result(self, data_report):
         TOTAL = 'Total time'
         result = []
@@ -192,13 +198,10 @@ class TimelogReport():
 
         for entry_date in entry_dates:
             current_data = data_report[entry_date]
+            total_time = self.get_total_sum(current_data)
 
             result.append('\n# %s\n' % entry_date.strftime('%d/%m/%Y'))
             result = result + self.get_content(current_data)
-            total_time = functools.reduce(
-                lambda x, y: x + y,
-                [value[DURATION] for value in current_data.values()]
-            )
             result.append('\n%s:%s%s' % (
                 TOTAL,
                 ' ' * (COLUMN_WIDTH - len(TOTAL)),
