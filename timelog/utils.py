@@ -176,8 +176,8 @@ class TimelogReport():
         content = []
 
         for client, client_info in data.items():
-            content.append('%s : %s' % (client.capitalize(),
-                                        dateutils.format_duration(client_info[DURATION])))
+            content.append('%s: %s' % (client.capitalize(),
+                                       dateutils.format_duration(client_info[DURATION])))
             if client_info[TASKS] and self.tasks:
                 content.append('\n%s' % ''.join(client_info[TASKS]))
 
@@ -185,12 +185,17 @@ class TimelogReport():
 
     def get_result(self, data_report):
         result = []
+        entry_dates = [elem for elem in data_report.keys()]
+        entry_dates.sort()
 
-        for order_value, data in data_report.items():
-            result = result + self.get_content(data)
+        for entry_date in entry_dates:
+            current_data = data_report[entry_date]
+
+            result.append('\n# %s\n' % entry_date.strftime('%d/%m/%Y'))
+            result = result + self.get_content(current_data)
             total_time = functools.reduce(
                 lambda x, y: x + y,
-                [value[DURATION] for value in data.values()]
+                [value[DURATION] for value in current_data.values()]
             )
             result.append('\nTotal time: %s' % dateutils.format_duration(total_time))
 
