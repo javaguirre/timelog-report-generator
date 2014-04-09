@@ -12,4 +12,5 @@ TIMELOG_SEPARATION_FORMAT = r': '   # This is the separation between the
 SLACK_FORMAT = r'\w+\*\*$'          # the format of the log entries that aren't
                                     # counted as work
 SITE = os.path.join(os.path.dirname(__file__), '../reports')
-
+COLUMN_WIDTH = 30  # For the format in the command line,
+                   # the second colun will start at 30 characters
