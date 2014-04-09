@@ -4,32 +4,12 @@ import argparse
 
 from timelog.utils import TimelogReport
 
-TIMELOG_FILE = 'timelog.txt'
-CLIENTS_FILE = 'projects.txt'
-
 
 def main():
     parser = argparse.ArgumentParser(description='Timelog - Report generator for gtimelog format')
-    parser.add_argument('--timelog-src',
-                        help='Source file for the timelog',
-                        default=TIMELOG_FILE)
-    parser.add_argument('--clients-file',
-                        help='Source file for the clients',
-                        default=CLIENTS_FILE)
-    parser.add_argument('--start-date',
-                        help='Start date report'
-                        )
-    parser.add_argument('--end-date',
-                        help='End date report'
-                        )
-    parser.add_argument('--order-by',
-                        help='Order by month week day',
-                        default=False
-                        )
-    parser.add_argument('--price',
-                        help='With price or not, boolean',
-                        action='store_true',
-                        default=False)
+
+    parser.add_argument('--month', help='Month of the report')
+    parser.add_argument('--year', help='Year of the report')
     parser.add_argument('--tasks',
                         help='With tasks or not, boolean',
                         action='store_true',
@@ -40,7 +20,7 @@ def main():
     parser.add_argument('--client',
                         help='The client in case you want a client report',
                         default=None)
-    parser.add_argument('--generate-html',
+    parser.add_argument('--html',
                         help='Generate HTML page with the stats',
                         action='store_true',
                         default=False)
