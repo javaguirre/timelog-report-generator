@@ -195,10 +195,12 @@ class TimelogReport():
         result = []
         entry_dates = [elem for elem in data_report.keys()]
         entry_dates.sort()
+        general_total = datetime.timedelta(0)
 
         for entry_date in entry_dates:
             current_data = data_report[entry_date]
             total_time = self.get_total_sum(current_data)
+            general_total += total_time
 
             result.append('\n# %s\n' % entry_date.strftime('%d/%m/%Y'))
             result = result + self.get_content(current_data)
@@ -207,6 +209,9 @@ class TimelogReport():
                 ' ' * (COLUMN_WIDTH - len(TOTAL)),
                 dateutils.format_duration(total_time)
             ))
+
+        general_total = dateutils.format_duration(general_total)
+        result.append('\nTOTAL: %s' % general_total)
 
         return result
 
