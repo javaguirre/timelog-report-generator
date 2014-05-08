@@ -113,15 +113,15 @@ class TimelogReport():
 
         return new_entries
 
-    def set_json_entry(self, item):
+    def set_json_entry(self, key, item):
         return {
-            'x': key,
+            'x': key.day,
             'y': item[DURATION].seconds/(3600),
             'size': len(item[TASKS]),
             'id': '-'.join(['id', str(key)])
         }
 
-    def set_json_output(entries):
+    def set_json_output(self, entries):
         if self.client:
             result_output = [{'key': self.client, 'values': entries}]
         else:
@@ -141,7 +141,7 @@ class TimelogReport():
                 for client, item in entry.items():
                     entries_multiple_clients[client].append(self.set_json_entry(key, item))
 
-        return json.dumps(set_json_output(entries_json or entries_multiple_clients))
+        return json.dumps(self.set_json_output(entries_json or entries_multiple_clients))
 
     def generate_html_output(self, entries, total=0):
         loader = FileSystemLoader(os.path.join(os.path.dirname(__file__),
@@ -156,9 +156,6 @@ class TimelogReport():
             os.mkdir(os.path.join(SITE, self.client or 'admin'))
         except FileExistsError:
             pass
-
-        if self.client:
-            total_time = dateutils.get_hours(total[self.client])
 
         env = Environment(loader=loader)
         template = env.get_template(HTML_TEMPLATE)
