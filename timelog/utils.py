@@ -147,7 +147,7 @@ class TimelogReport():
         loader = FileSystemLoader(os.path.join(os.path.dirname(__file__),
                                                'templates'))
 
-        total_time = 0
+        total_time = self.get_total_sum(entries)
         directory = self.client or 'admin'
         path = os.path.join(SITE, directory, '%s_%s.html' % (self.start_date.month, self.start_date.year))
         entries_json = self.generate_json_output(entries)
@@ -181,7 +181,15 @@ class TimelogReport():
 
         return content
 
-    def get_total_sum(self, data):
+    def get_total_sum(self, entries):
+        total_sum = datetime.timedelta(0)
+
+        for d, entry in entries.items():
+            total_sum += self.get_total_sum_for_entry(entry)
+
+        return dateutils.format_duration(total_sum)
+
+    def get_total_sum_for_entry(self, data):
         return functools.reduce(
                 lambda x, y: x + y,
                 [value[DURATION] for value in data.values()]
@@ -196,7 +204,7 @@ class TimelogReport():
 
         for entry_date in entry_dates:
             current_data = data_report[entry_date]
-            total_time = self.get_total_sum(current_data)
+            total_time = self.get_total_sum_for_entry(current_data)
             general_total += total_time
 
             result.append('\n# %s\n' % entry_date.strftime('%d/%m/%Y'))
