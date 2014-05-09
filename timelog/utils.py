@@ -134,12 +134,17 @@ class TimelogReport():
         entries_json = []
         entries_multiple_clients = defaultdict(list)
 
-        for key, entry in entries.items():
+        entry_dates = [elem for elem in entries.keys()]
+        entry_dates.sort()
+
+        for entry_date in entry_dates:
+            current_data = entries[entry_date]
+
             if self.client:
-                entries_json.append(self.set_json_entry(key, entry[self.client]))
+                entries_json.append(self.set_json_entry(entry_date, current_data[self.client]))
             else:
-                for client, item in entry.items():
-                    entries_multiple_clients[client].append(self.set_json_entry(key, item))
+                for client, item in current_data.items():
+                    entries_multiple_clients[client].append(self.set_json_entry(entry_date, item))
 
         return json.dumps(self.set_json_output(entries_json or entries_multiple_clients))
 
